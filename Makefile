@@ -15,4 +15,4 @@ format:
 .PHONY: test build
 test: $(AKG)
 	docker build -t authorized-keys-github-test .
-	docker run --privileged -ti authorized-keys-github-test
+	docker run -e TERM=xterm --privileged -i authorized-keys-github-test

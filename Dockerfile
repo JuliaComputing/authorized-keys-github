@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:22.04
 
 # Install `sudo` so `staticfloat` can mount things
 RUN apt update -y && apt install -y sudo curl openssh-client
