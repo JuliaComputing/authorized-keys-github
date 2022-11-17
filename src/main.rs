@@ -1,19 +1,19 @@
 extern crate clap;
 #[macro_use]
 extern crate fstrings;
-extern crate users;
-extern crate tempfile;
 extern crate reqwest;
+extern crate tempfile;
 extern crate tokio;
-use clap::{App};
-use std::process;
+extern crate users;
+use clap::App;
 use std::fs::File;
-use users::get_user_by_uid;
-use tempfile::NamedTempFile;
-use std::io::Write;
-use std::time::SystemTime;
 use std::io::prelude::*;
 use std::io::SeekFrom;
+use std::io::Write;
+use std::process;
+use std::time::SystemTime;
+use tempfile::NamedTempFile;
+use users::get_user_by_uid;
 
 static GITHUB_URL: &str = "https://github.com";
 static DEFAULT_KEYS_DIRECTORY: &str = "/var/keys";
@@ -22,7 +22,11 @@ fn uid_keys_file(keys_dir: &str, uid: u32) -> String {
     return f!("{keys_dir}/{uid}.keys");
 }
 
-async fn refresh_keys_from_github(uid: u32, keys_dir: &str, keyfile_contents: &mut String) -> Result<File, String> {
+async fn refresh_keys_from_github(
+    uid: u32,
+    keys_dir: &str,
+    keyfile_contents: &mut String,
+) -> Result<File, String> {
     eprintln!("Refreshing keys from github");
     let user = get_user_by_uid(uid);
     if user.is_none() {
@@ -43,12 +47,15 @@ async fn refresh_keys_from_github(uid: u32, keys_dir: &str, keyfile_contents: &m
 
     let response = response_future.ok().unwrap();
     if !response.status().is_success() {
-        return Err(format!("Remote had invalid request code: {}", response.status()));
+        return Err(format!(
+            "Remote had invalid request code: {}",
+            response.status()
+        ));
     }
 
     let body = response.text().await;
     if body.is_err() {
-        return Err(format!("Failed to retrieve body: {}", body.unwrap_err()))
+        return Err(format!("Failed to retrieve body: {}", body.unwrap_err()));
     }
     keyfile_contents.clone_from(&body.unwrap());
 
@@ -66,11 +73,14 @@ async fn refresh_keys_from_github(uid: u32, keys_dir: &str, keyfile_contents: &m
             let _ = &file.seek(SeekFrom::Start(0));
             Ok(file)
         }
-        Err(e) => return Err(e.to_string())
-    }
+        Err(e) => return Err(e.to_string()),
+    };
 }
 
-fn print_requested_key(keyfile_contents: &str, requested_fp: Option<&str>) -> std::io::Result<bool> {
+fn print_requested_key(
+    keyfile_contents: &str,
+    requested_fp: Option<&str>,
+) -> std::io::Result<bool> {
     if !requested_fp.is_some() {
         print!("{}", keyfile_contents);
         return Ok(true);
@@ -79,7 +89,7 @@ fn print_requested_key(keyfile_contents: &str, requested_fp: Option<&str>) -> st
         let lines = keyfile_contents.lines();
         for line in lines {
             if line.starts_with("#") || line.is_empty() {
-                continue
+                continue;
             }
             let pubkey = sshkeys::PublicKey::from_string(&line).unwrap();
             let fp = pubkey.fingerprint();
@@ -97,7 +107,7 @@ fn is_outdated(time: SystemTime) -> bool {
     // the key may have been revoked
     return match SystemTime::now().duration_since(time) {
         Ok(duration) => duration.as_secs() > 15 * 60,
-        Err(_) => true
+        Err(_) => true,
     };
 }
 
@@ -110,12 +120,13 @@ async fn main() {
         .args_from_usage(
             "--fp=[fp]        'The fingerprint for the requested key'
              --keys-dir=[kd]  'The keys directory (default: /var/keys)'
-             <uid>            'The UID for which to retrieve authorized keys'")
+             <uid>            'The UID for which to retrieve authorized keys'",
+        )
         .get_matches();
     let uid = matches.value_of("uid");
     let keys_dir_arg = matches.value_of("keys-dir");
     let mut requested_fp = matches.value_of("fp");
-    if !uid.is_some(){
+    if !uid.is_some() {
         eprintln!("ERROR: uid is required");
         process::exit(1);
     }
@@ -134,7 +145,7 @@ async fn main() {
         let unwrap_requested_fp = requested_fp.unwrap();
         let separator = unwrap_requested_fp.find(':').unwrap();
         assert_eq!(unwrap_requested_fp.get(..separator).unwrap(), "SHA256");
-        requested_fp = Some(unwrap_requested_fp.get(separator+1..).unwrap());
+        requested_fp = Some(unwrap_requested_fp.get(separator + 1..).unwrap());
     }
 
     let keys_dir: &str;
@@ -146,20 +157,22 @@ async fn main() {
 
     let mut keyfile_contents = String::new();
     let file = File::open(uid_keys_file(keys_dir, uid));
-    if !file.is_ok() || match &file.as_ref().ok().unwrap().metadata() {
+    if !file.is_ok()
+        || match &file.as_ref().ok().unwrap().metadata() {
             Ok(md) => match md.modified() {
                 Ok(date) => is_outdated(date),
-                Err(_) => false
+                Err(_) => false,
             },
-            Err(_) => false
-        } {
+            Err(_) => false,
+        }
+    {
         _ = refresh_keys_from_github(uid, keys_dir, &mut keyfile_contents).await;
         _ = print_requested_key(&keyfile_contents, requested_fp);
     } else {
         let _read = file.unwrap().read_to_string(&mut keyfile_contents);
-        if ! match print_requested_key(&keyfile_contents, requested_fp) {
+        if !match print_requested_key(&keyfile_contents, requested_fp) {
             Ok(ok) => ok,
-            Err(_) => false
+            Err(_) => false,
         } {
             _ = refresh_keys_from_github(uid, keys_dir, &mut keyfile_contents).await;
             _ = print_requested_key(&keyfile_contents, requested_fp);

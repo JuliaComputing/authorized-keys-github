@@ -6,6 +6,12 @@ build: $(AKG)
 $(AKG): Cargo.toml Cargo.lock src/main.rs
 	cargo build --release
 
+check: $(AKG)
+	cargo fmt --all -- --check
+
+format:
+	cargo fmt --all
+
 .PHONY: test build
 test: $(AKG)
 	docker build -t authorized-keys-github-test .
