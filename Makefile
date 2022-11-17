@@ -52,7 +52,7 @@ format:
 	$(call docker_exec,rust,cargo fmt --color=always --all)
 
 .PHONY: test build
-test: $(AKG)
+test: $(NATIVE_EXE)
 ifeq ($(USE_DOCKER),true)
 	docker build --build-arg UID=$(UID) --build-arg GID=$(GID) -t authorized-keys-github-test .
 endif

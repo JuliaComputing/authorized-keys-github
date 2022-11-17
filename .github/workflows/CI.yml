@@ -43,17 +43,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
 
-      - name: Install rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
-
-      - name: Build
-        shell: bash
-        run: "make"
-
       - name: Test
         shell: bash
         run: "make test"
