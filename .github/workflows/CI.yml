@@ -63,7 +63,10 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          mv target/${{ matrix.target }}/release/authorized-keys-github authorized-keys-github-${{ matrix.target }}
+          cd target
+          for target in *-*; do
+            mv ${target}/release/authorized-keys-github ../authorized-keys-github-${target}
+          done
           
       - name: Publish
         uses: softprops/action-gh-release@v1
