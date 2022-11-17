@@ -4,7 +4,9 @@ set -euo pipefail
 # If we're running the tests locally, we should build `authorized-keys-github` and add it to our `PATH`
 # On CI, we'll be running in a docker container that will already contain this file.
 if ! command -v authorized-keys-github >/dev/null; then
-    cargo build --release
+    if [[ ! -f target/release/authorized-keys-github ]]; then
+        cargo build --release
+    fi
     export PATH=$PATH:$(pwd)/target/release
 fi
 
@@ -60,7 +62,7 @@ test_output() {
 }
 
 # Basic test: Just see if it runs
-header "Basic test, should print all github keys for current user:"
+header "Basic test, should print all github keys for current user $(id -u -n):"
 OUTPUT="$(authorized-keys-github --keys-dir="${KEYS_DIR}" $(id -u) 2>&1 | tee >(cat 1>&2))"
 test_output "${OUTPUT}" "REFRESH_EXPECTED" "KEYS_EXPECTED"
 

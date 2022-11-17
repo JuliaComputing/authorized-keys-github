@@ -1,10 +1,12 @@
-FROM ubuntu:22.04
+FROM debian
 
 # Install `sudo` so `staticfloat` can mount things
-RUN apt update -y && apt install -y sudo curl openssh-client
+RUN apt update -y && apt install -y sudo openssh-client ca-certificates
 
 # Create default `staticfloat` user, give him sudo powers
-RUN useradd staticfloat
+ARG UID=1000
+ARG GID=1000
+RUN useradd -u ${UID} staticfloat
 RUN echo "staticfloat ALL = NOPASSWD: ALL" >> /etc/sudoers
 
 # Copy in our build artifacts
