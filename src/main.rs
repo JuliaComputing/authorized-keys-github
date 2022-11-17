@@ -153,16 +153,16 @@ async fn main() {
             },
             Err(_) => false
         } {
-        refresh_keys_from_github(uid, keys_dir, &mut keyfile_contents).await;
-        print_requested_key(&keyfile_contents, requested_fp);
+        _ = refresh_keys_from_github(uid, keys_dir, &mut keyfile_contents).await;
+        _ = print_requested_key(&keyfile_contents, requested_fp);
     } else {
         let _read = file.unwrap().read_to_string(&mut keyfile_contents);
         if ! match print_requested_key(&keyfile_contents, requested_fp) {
             Ok(ok) => ok,
             Err(_) => false
         } {
-            refresh_keys_from_github(uid, keys_dir, &mut keyfile_contents).await;
-            print_requested_key(&keyfile_contents, requested_fp);
+            _ = refresh_keys_from_github(uid, keys_dir, &mut keyfile_contents).await;
+            _ = print_requested_key(&keyfile_contents, requested_fp);
         }
     }
     process::exit(0);
