@@ -1,0 +1,7 @@
+# These lines just speed up the docker build, so it doesn't have to copy hundreds
+# of MBs of data to the daemon during build
+src/
+target/
+!target/release/authorized-keys-github
+Cargo.*
+Makefile
