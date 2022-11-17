@@ -10,5 +10,5 @@ fstrings = "0.2.2"
 sshkeys = "0.3.2"
 users = "0.9.1"
 tempfile = "3.1.0"
-reqwest = "0.10.4"
+reqwest = {version = "0.10.4", default-features = false, features=["rustls-tls-native-roots"]}
 tokio = {version = "0.2.13", features=["rt-threaded", "macros"]}
