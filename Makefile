@@ -1,6 +1,6 @@
 all: build
 
-AKG := target/release/authrorized-keys-github
+NATIVE_EXE := target/release/authorized-keys-github
 
 # When building the testing image, make the UID and GID match ours
 UID := $(shell id -u)
@@ -34,16 +34,35 @@ endef
 # To speed up interactive development with cargo, cache the cargo home in a subdir of `target`
 target/.docker_cargo_home:
 	mkdir -p $@
-$(AKG): target/.docker_cargo_home
+$(NATIVE_EXE): target/.docker_cargo_home
 else
 define docker_exec
 $(2)
 endef
 endif
 
-$(AKG): Cargo.toml Cargo.lock src/main.rs
+$(NATIVE_EXE): Cargo.toml Cargo.lock src/main.rs
 	$(call docker_exec,rust,cargo build --color=always --release)
-build: $(AKG)
+build: $(NATIVE_EXE)
+
+# Use `cross` to build for other architectures
+target/%/release/authorized-keys-github:
+ifeq ($(shell which cross 2>/dev/null),)
+	cargo install cross --git https://github.com/cross-rs/cross
+endif
+	cross build --target $* --release
+
+# `ring` has some build problems, preventing us from building on:
+#    - powerpc64le-unknown-linux-gnu
+#    - arm-unknown-linux-gnueabihf
+TARGET_TRIPLETS := aarch64-unknown-linux-gnu \
+				   aarch64-unknown-linux-musl \
+				   armv7-unknown-linux-gnueabihf \
+				   i686-unknown-linux-gnu \
+				   i686-unknown-linux-musl \
+				   x86_64-unknown-linux-gnu \
+				   x86_64-unknown-linux-musl
+$(foreach triplet,$(TARGET_TRIPLETS),$(eval multibuild: target/$(triplet)/release/authorized-keys-github))
 
 check:
 	$(call docker_exec,rust,cargo fmt --color=always --all -- --check)
@@ -52,7 +71,7 @@ format:
 	$(call docker_exec,rust,cargo fmt --color=always --all)
 
 .PHONY: test build
-test: $(AKG)
+test: $(NATIVE_EXE)
 ifeq ($(USE_DOCKER),true)
 	docker build --build-arg UID=$(UID) --build-arg GID=$(GID) -t authorized-keys-github-test .
 endif
