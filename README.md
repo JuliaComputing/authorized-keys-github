@@ -11,6 +11,8 @@ AuthorizedKeysCommand /var/lib/authorized-keys-github --fp=%f %U
 The tool will then check the given fingerprint and username against [GitHub's `/users/{username}/keys` endpoint](https://docs.github.com/en/rest/users/keys#list-public-keys-for-a-user).
 For this tool to work, users must use the same username as their GitHub username, and they must add their SSH fingerprints to their [public GitHub SSH keys list](https://github.com/settings/keys).
 
+The tool will attempt to build a cache of SSH key fingerprints at `/var/keys` by default; to change this, use the `--keys-dir` option.
+
 ## Usage Warning
 
 Although we have taken some pains to test this in exceptional circumstances (such as disk space exhaustion, read-only filesystems, etc...) it is possible there remain serious bugs that can lock you out of your server.
