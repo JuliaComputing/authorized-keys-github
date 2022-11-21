@@ -12,6 +12,10 @@ ifeq ($(COLS),)
 COLS := 80
 endif
 
+# Always strip debuginfo and symbols in the release build
+# This helps to reduce footprint on constrained systems such as OpenWRT
+export CARGO_PROFILE_RELEASE_STRIP=true
+
 # If we're supposed to use `docker`, do so with the image in `$(1)`.
 # Otherwise, just run natively.  When running in `docker`, we use `--privileged`
 # to give the docker container the ability to `mount`.
@@ -23,6 +27,7 @@ docker run --privileged \
 		   -e CARGO_HOME=/usr/local/cargo_home \
 		   -e CARGO_TERM_PROGRESS_WIDTH=$(COLS) \
 		   -e CARGO_TERM_PROGRESS_WHEN=always \
+		   -e CARGO_PROFILE_RELEASE_STRIP \
 		   -v $(shell pwd)/target/.docker_cargo_home:/usr/local/cargo_home \
            -v $(shell pwd):/app \
 		   -w /app \
