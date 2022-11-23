@@ -1,6 +1,6 @@
 [package]
 name = "authorized-keys-github"
-version = "0.0.5"
+version = "0.1.0"
 authors = ["Keno Fischer <keno@juliahub.com>", "Elliot Saba <elliot.saba@juliahub.com>"]
 edition = "2018"
 
