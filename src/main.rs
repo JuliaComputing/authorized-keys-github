@@ -5,7 +5,7 @@ extern crate reqwest;
 extern crate tempfile;
 extern crate tokio;
 extern crate users;
-use clap::App;
+use clap::{App,crate_version,crate_name,crate_authors};
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::SeekFrom;
@@ -113,10 +113,10 @@ fn is_outdated(time: SystemTime) -> bool {
 
 #[tokio::main]
 async fn main() {
-    let matches = App::new("authorized-keys-github")
-        .version("0.1")
-        .author("Keno Fischer <keno@juliacomputing.com>")
-        .about("Retrieve SSH keys from GitHub auth local caching")
+    let matches = App::new(crate_name!())
+        .version(crate_version!())
+        .author(crate_authors!("\n"))
+        .about("Retrieve SSH keys from GitHub auth with local caching")
         .args_from_usage(
             "--fp=[fp]        'The fingerprint for the requested key'
              --keys-dir=[kd]  'The keys directory (default: /var/keys)'
