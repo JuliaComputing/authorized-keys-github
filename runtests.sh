@@ -15,13 +15,16 @@ export RUST_BACKTRACE=full
 
 header() {
     tput bold
-    tput setaf 1
+    tput setaf 4
     echo "$*"
     tput sgr0
 }
 
 die() {
+    tput bold
+    tput setaf 1
     echo "ERROR: $*" >&2
+    tput sgr0
     exit 1
 }
 
@@ -83,6 +86,67 @@ FINGERPRINT="SHA256:0000000000000000000000000000000000000000000"
 OUTPUT="$(authorized-keys-github --keys-dir="${KEYS_DIR}" --fp=${FINGERPRINT} $(id -u) 2>&1 | tee >(cat 1>&2))"
 test_output "${OUTPUT}" "REFRESH_EXPECTED" ""
 
+# System users are not allowed without `--allow-system-user`:
+# In our `Dockerfile`, we setup a user with a valid GitHub username (keno) with UID 900:
+if [[ $(getent passwd 900 2>/dev/null) == "keno:"* ]]; then
+    header "System user, errors"
+    if authorized-keys-github --keys-dir="${KEYS_DIR}" 900 ; then
+        die "System user should not be allowed!"
+    fi
+    
+    header "System user, positive"
+    OUTPUT="$(authorized-keys-github --keys-dir="${KEYS_DIR}" --allow-system-uid=900 900 2>&1 | tee >(cat 1>&2))"
+    test_output "${OUTPUT}" "REFRESH_EXPECTED" "KEYS_EXPECTED"
+fi
+
+# Generate overrides file for a system user:
+OVERRIDES_FILE="${KEYS_DIR}/overrides"
+cat >"${OVERRIDES_FILE}" <<EOF
+901: staticfloat keno
+32000: staticfloat
+EOF
+
+header "Overrides, single"
+OUTPUT="$(authorized-keys-github --keys-dir="${KEYS_DIR}" --overrides-file="${OVERRIDES_FILE}" 32000 2>&1 | tee >(cat 1>&2))"
+test_output "${OUTPUT}" "REFRESH_EXPECTED" "KEYS_EXPECTED"
+num_staticfloat_keys=$(grep "ssh-rsa" <<<"${OUTPUT}" | wc -l)
+
+header "Overrides, multiple and system user"
+OUTPUT="$(authorized-keys-github --keys-dir="${KEYS_DIR}" --overrides-file="${OVERRIDES_FILE}" --allow-system-uid=901 901 2>&1 | tee >(cat 1>&2))"
+test_output "${OUTPUT}" "REFRESH_EXPECTED" "KEYS_EXPECTED"
+num_combined_keys=$(grep "ssh-rsa" <<<"${OUTPUT}" | wc -l)
+
+if [[ "${num_combined_keys}" -le "${num_staticfloat_keys}" ]]; then
+    die "Expected more keys than ${num_combined_keys}!"
+fi
+
+# Generate a completely invalid overrides file
+header "Invalid overrides, errors"
+cat >"${OVERRIDES_FILE}" <<EOF
+901: staticfloat keno
+science: you monster
+EOF
+if authorized-keys-github --keys-dir="${KEYS_DIR}" --overrides-file="${OVERRIDES_FILE}" $(id -u) ; then
+    die "Invalid override file should fail!"
+fi
+
+# Generate an overrides file that contains a duplicate mapping
+header "Overlapping overrides, errors"
+cat >"${OVERRIDES_FILE}" <<EOF
+901: staticfloat keno
+902: staticfloat
+901: keno
+EOF
+if authorized-keys-github --keys-dir="${KEYS_DIR}" --overrides-file="${OVERRIDES_FILE}" $(id -u) ; then
+    die "Overlapping override file should fail!"
+fi
+
+# Generate an overrides file that is writable by other users
+header "Other-writable overrides, errors"
+chmod g+w "${OVERRIDES_FILE}"
+if authorized-keys-github --keys-dir="${KEYS_DIR}" --overrides-file="${OVERRIDES_FILE}" $(id -u) ; then
+    die "Other-writable override file should fail!"
+fi
 
 # Fill up tmpfs to generate out-of-space errors:
 fill_up_disk_space "${KEYS_DIR}"
