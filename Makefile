@@ -70,10 +70,10 @@ TARGET_TRIPLETS := aarch64-unknown-linux-gnu \
 $(foreach triplet,$(TARGET_TRIPLETS),$(eval multibuild: target/$(triplet)/release/authorized-keys-github))
 
 check:
-	$(call docker_exec,rust,cargo fmt --color=always --all -- --check)
+	$(call docker_exec,rust,cargo fmt --all -- --check)
 
 format:
-	$(call docker_exec,rust,cargo fmt --color=always --all)
+	$(call docker_exec,rust,cargo fmt --all)
 
 .PHONY: test build
 test: $(NATIVE_EXE)

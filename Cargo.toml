@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33.0"
-fstrings = "0.2.2"
 sshkeys = "0.3.2"
 users = "0.9.1"
 tempfile = "3.1.0"

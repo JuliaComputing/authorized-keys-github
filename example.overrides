@@ -1,0 +1,24 @@
+# This is an "overrides" file, it allows the administrator to provide
+# overrides on which UIDs should be mapped to which GitHub usernames.
+# The syntax is a series of lines of the form:
+#
+#   <uid>: username1 username2 ...
+#
+# Multiple usernames are permissable, to allow multiple github users
+# to log in to a shared account (e.g. `root` on single-user systems).
+# Note that you must pass `--allow-system-uid=xxx` for each UID under
+# 1000 for these to be accepted.
+#
+# If a UID is listed here, the typical user database in `/etc/passwd`
+# is not consulted at all; this provides a secure mechanism by which
+# to map local usernames which are constrained in some way to github
+# usernames that you do have full control over.
+#
+# Needless to say, lines starting with '#' are ignored.
+# What follows here is a series of examples:
+
+# A single UID can be mapped to multiple GitHub usernames
+0: keno staticfloat
+
+# A GitHub username can be assigned to multiple UIDs
+1000: staticfloat
